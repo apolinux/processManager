@@ -13,27 +13,43 @@ example of use:
 
     <?php
 
-    $beanstalk = new beanstalkConn($host, $port);
+    use ProcessManager\Beanstalk;
+    use ProcessManager\QueueManager;
 
-    $beanstalk->defineTube("cola_mt_3dm_platx");
+    require_once __DIR__ . '/../vendor/autoload.php' ;
 
-    $queuemngr = new QueueMngr($beanstak)
+
+    $beanstalk = new Beanstalk(['host' => 'localhost']);
+
+    $beanstalk->setTube("send-msgs");
+
+    $beanstalk->clearTube();
+    $beanstalk->clearConn();
+
+    $queuemngr = new QueueManager($beanstalk) ;
+
+    // consumer job
+    $callable_task = function($queue, $cont){
+       for($cont=1; $cont<=4; $cont++){
+            $msg = $queue->readMsg();
+            echo "in task $cont. msg: $msg\n" ;
+       }
+    };
+
+    $num_tasks= 3;
 
     for($cont=1 ; $cont<=$num_tasks; $cont++){
-        $queue->addTask( $callable_task , [$queuemngr] );
+        $queuemngr->addTask( $callable_task , [$cont] );
     }
 
+    // in producer job, send info to children using queue
+    $queuemngr->addTask(function($queuemngr){
+        $msg_pending = explode(" ","El amor es como la vida y la naturaleza lo es todo") ;
+
+        foreach($msg_pending as $msg) {
+             $queuemngr->sendMsg($msg);
+        }
+    });
     // fork and run tasks 
     $queuemngr->run();
-
-    $callable_task = function($queue){
-       $msg = $queue->read();
-       // process queue 
-       // ...
-    }
-
-    // in parent process, send info to children using queue
-    for($mtpending as $mt) {
-	     $queue->sendMsg(["mt" => $mt]);
-    }
 
