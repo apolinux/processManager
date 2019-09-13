@@ -5,9 +5,15 @@ namespace ProcessManager;
 use Pheanstalk\Pheanstalk;
 
 /**
- * Description of Beanstalk
+ * Pheanstalk wrapper used by QueueManager class
+ * 
+ * beanstalk is a simple queue manager 
+ * pheanstalk is a PHP class that connect to beanstalk server and send/receive messages
+ * 
+ * @see https://github.com/pheanstalk/pheanstalk
+ * @see https://beanstalkd.github.io/
  *
- * @author drake
+ * @author Carlos Arce <apolinux@gmail.com>
  */
 class Beanstalk implements Queueable{
     
@@ -20,15 +26,28 @@ class Beanstalk implements Queueable{
      * @var Pheanstalk
      */
     private $connector ;
+    
+    /**
+     *
+     * @var array
+     */
     private $options ;
     
-    public function __construct($options){
+    /**
+     * 
+     * @param array $options
+     */
+    public function __construct(array $options){
         $this->checkValidOptions($options);
     }
     
+    /**
+     * verify if options are valid
+     * @param array $options
+     * @throws \Exception
+     */
     private function checkValidOptions($options){
         $valid = ['host'];
-        //$total = $valid + ['timeout'] ;
         foreach($valid as $option_valid){
             if(! isset($options[$option_valid])){
                 throw new \Exception("Option $option_valid must be defined") ;
@@ -41,13 +60,17 @@ class Beanstalk implements Queueable{
         
         $this->options['tube'] = $options['tube'] ?? self::DEFAULT_TUBE ;
     }
-    
+
+    /**
+     * define tube 
+     * @param string $tube
+     */
     public function setTube($tube){
         $this->options['tube'] = $tube ;
     }
     
     /**
-     * 
+     * connect to beanstalk server
      * @return Pheanstalk
      */
     public function connect(){
@@ -62,31 +85,53 @@ class Beanstalk implements Queueable{
         return $this->connector ;
     }
     
-    public function sendMsg($msg){
+    /**
+     * send message by tube
+     * 
+     * @param mixed $msg
+     */
+    public function sendMsg($msg, $priority= Pheanstalk::DEFAULT_PRIORITY ,
+            $delay = Pheanstalk::DEFAULT_DELAY , $ttr = Pheanstalk::DEFAULT_TTR){
         $this->connect()
              ->useTube($this->options['tube'])
-             ->put($msg) ;
+             ->put($msg, $priority, $delay, $ttr) ;
     }
     
-    public function readMsg(){
+    /**
+     * reads a message from tube
+     * 
+     * reads message and delete
+     * 
+     * @return mixed
+     */
+    public function readMsg($timeout=false){
         $conn = $this->connect()
              ->watch($this->options['tube']);
         if($this->options['tube'] != self::DEFAULT_TUBE){
              $conn->ignore(self::DEFAULT_TUBE) ;
         }
-        $job = $conn->reserve();
+        if($timeout === false){
+            $job = $conn->reserve();
+        }else{
+            $job = $conn->reserveWithTimeout($timeout) ;
+        }
+        
         $data = $job->getData();
         $conn->delete($job);
         return $data ;
     }
     
-    public function clearTube(){
+    public function clearTube($bury=true){
         do{
             $job = $this->connect()->watch($this->options['tube'])->reserveWithTimeout(0);
             if(! $job){
                 break ;
             }
-            $this->connect()->bury($job);
+            if($bury){
+                $this->connect()->bury($job);
+            }else{
+                $this->connect()->delete($job);
+            }
         }while(1) ;
     }
     

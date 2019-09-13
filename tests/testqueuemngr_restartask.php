@@ -18,10 +18,10 @@ $queuemngr = new QueueManager($beanstalk,[
 ]) ;
 
 // consumer job
-$callable_task = function($queue, $cont){
+$callable_task = function($queue, $taskid){
    for($cont=1; $cont<=4; $cont++){
         $msg = $queue->readMsg();
-        echo "in task $cont. msg: $msg\n" ;
+        echo "in task $taskid. msg: $msg\n" ;
    }
 };
 
@@ -34,7 +34,7 @@ for($cont=1 ; $cont<=$num_tasks; $cont++){
 $lock_file = '/tmp/queuemngrr.lock' ;
 unlink($lock_file);
 
-$queuemngr->addTask( function ($queue, $cont) use($lock_file){
+$queuemngr->addTask( function ($queue, $taskid) use($lock_file){
     
     if(! file_exists($lock_file)){
         touch($lock_file);
@@ -43,7 +43,7 @@ $queuemngr->addTask( function ($queue, $cont) use($lock_file){
     
     for($cont=1; $cont<=4; $cont++){
         $msg = $queue->readMsg();
-        echo "in task $cont. msg: $msg\n" ;
+        echo "in task $taskid. msg: $msg\n" ;
    }
     
 }, [3] );

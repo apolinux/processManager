@@ -28,7 +28,8 @@ class QueueManager {
     
     private $default_options = [
       'wait_tasks_time' => self::WAIT_TASKS_TIME ,
-      'restart_ended_task' => false ,
+      'restart_ended_task' => false , // if true, restart ended tasks if error
+      'restarting_return_code_min' => 2 , // minimal return code of task ended to let restarting
     ];
     
     private $options  = [];
@@ -63,7 +64,6 @@ class QueueManager {
         //$task_pid_list = [] ;
         $this->task_run_list = [];
         foreach($this->task_list as $index => $task){
-            //$task_pid_list[] = $this->runTask($task);
             $this->runTask($task, $index);
         }
         
@@ -103,11 +103,20 @@ class QueueManager {
         }
     }
     
+    /**
+     * do an action if task process has ended
+     * 
+     * @param int $task_idx task index
+     * @param int $pid process id of task forked
+     * @return void
+     */
     private function checkTask($task_idx, $pid){
         $res = pcntl_waitpid($pid, $status, WNOHANG);
         
         if($this->getOption('restart_ended_task')){
-            return $this->restartTask($task_idx,$res, $status);
+            if( $this->restartTask($task_idx,$res, $status)){
+                return ;
+            }
         }
         // If the process has already exited
         if($res == -1 || $res > 0){
@@ -116,16 +125,26 @@ class QueueManager {
         }
     }
     
+    /**
+     * restart task when is necessary
+     * 
+     * restart task when ended and return code is greater than a minimal defined
+     * 
+     * @param int $task_idx task index in task list
+     * @param int $res result of pcntl_waitpid, maybe -1, 0 or process id of task
+     * @param int $status status information about process
+     * @return boolean  true if task was restarted
+     */
     private function restartTask($task_idx, $res, $status){
-        
         $statusc = pcntl_wexitstatus($status);
         // only restart if ther was an error when child ended
-        if( ( $res == -1 || $res > 0 ) && ( $statusc > 2 ) ){
+        if( ( $res == -1 || $res > 0 ) && ( $statusc > $this->getOption('restarting_return_code_min') ) ){
             echo "restarting task $task_idx \n";
             $task = $this->task_list[$task_idx];
             $this->runTask($task, $task_idx);
+            return true ;
         }
-        
+        return false ;
     }
     
     public function getOption($option){

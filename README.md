@@ -53,5 +53,3 @@ example of use:
     // fork and run tasks 
     $queuemngr->run();
 
-# TODO
-re-create children when it's necessary.
