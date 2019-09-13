@@ -3,9 +3,9 @@ Process Manager written in PHP
 
 Controls a pool of subprocesses and send them messages using queue. This first version uses beanstalk to communicate processes.
 
-There is a main loop in parent that sends data to children through the queue. The children processes read this data from queue and process it. 
+There is a task that sends data to children through the queue. The other processes read this data from queue and process it. 
 
-The main loop checks if there are died children and recreate them if it's necessary.
+The main loop waits for the children finish to end script.
 
 # Example
 
@@ -53,3 +53,5 @@ example of use:
     // fork and run tasks 
     $queuemngr->run();
 
+# TODO
+re-create children when it's necessary.

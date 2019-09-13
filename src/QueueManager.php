@@ -27,7 +27,8 @@ class QueueManager {
     private $task_list ;
     
     private $default_options = [
-      'wait_tasks_time' => self::WAIT_TASKS_TIME
+      'wait_tasks_time' => self::WAIT_TASKS_TIME ,
+      'restart_ended_task' => false ,
     ];
     
     private $options  = [];
@@ -39,7 +40,7 @@ class QueueManager {
      */
     public function __construct(Queueable $queue, array $options=[]) {
         $this->queue = $queue ;
-        $this->options = $this->default_options + (array)$options ;
+        $this->options = array_merge($this->default_options , (array)$options) ;
     }
     
     /**
@@ -53,16 +54,20 @@ class QueueManager {
         $this->task_list[] = new Task($task,$params) ;
     }
     
+    private $task_run_list ;
+    
     /**
      * run tasks in background
      */
     public function run(){
-        $task_pid_list = [] ;
-        foreach($this->task_list as $task){
-            $task_pid_list[] = $this->runTask($task);
+        //$task_pid_list = [] ;
+        $this->task_run_list = [];
+        foreach($this->task_list as $index => $task){
+            //$task_pid_list[] = $this->runTask($task);
+            $this->runTask($task, $index);
         }
         
-        $this->waitForTasks($task_pid_list);
+        $this->waitForTasks();
     }
     
     /**
@@ -70,7 +75,7 @@ class QueueManager {
      * @param \ProcessManager\Task $task
      * @return int
      */
-    private function runTask(Task $task){
+    private function runTask(Task $task, $index){
         $pid = pcntl_fork();
         if($pid == -1){
             die('Error forking') ;
@@ -79,6 +84,7 @@ class QueueManager {
             $task->run();
             exit(0) ;
         }
+        $this->task_run_list[$index] = $pid ;
         return $pid ;
     }
     
@@ -87,19 +93,39 @@ class QueueManager {
      * 
      * @param array $pid_list
      */
-    private function waitForTasks(array $pid_list){
-        while(count($pid_list) > 0) {
-            foreach($pid_list as $key => $pid) {
-                $res = pcntl_waitpid($pid, $status, WNOHANG);
-
-                // If the process has already exited
-                if($res == -1 || $res > 0){
-                    unset($pid_list[$key]);
-                    echo "child with pid $pid exited with status:". pcntl_wexitstatus($status) ."\n" ;
-                }
+    //private function waitForTasks($pid_list){
+    private function waitForTasks(){
+        while(count($this->task_run_list) > 0) {
+            foreach($this->task_run_list as $task_idx => $pid) {
+                $this->checkTask($task_idx, $pid);
             }
             sleep($this->getOption('wait_tasks_time'));
         }
+    }
+    
+    private function checkTask($task_idx, $pid){
+        $res = pcntl_waitpid($pid, $status, WNOHANG);
+        
+        if($this->getOption('restart_ended_task')){
+            return $this->restartTask($task_idx,$res, $status);
+        }
+        // If the process has already exited
+        if($res == -1 || $res > 0){
+            unset($this->task_run_list[$task_idx]);
+            echo "child with pid $pid exited with status:". pcntl_wexitstatus($status) ."\n" ;
+        }
+    }
+    
+    private function restartTask($task_idx, $res, $status){
+        
+        $statusc = pcntl_wexitstatus($status);
+        // only restart if ther was an error when child ended
+        if( ( $res == -1 || $res > 0 ) && ( $statusc > 2 ) ){
+            echo "restarting task $task_idx \n";
+            $task = $this->task_list[$task_idx];
+            $this->runTask($task, $task_idx);
+        }
+        
     }
     
     public function getOption($option){
