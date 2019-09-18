@@ -1,6 +1,7 @@
 <?php
 
-namespace ProcessManager;
+namespace ProcessManager\QueueManager ;
+
 
 /**
  * Description of Queueable

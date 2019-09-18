@@ -1,6 +1,6 @@
 <?php
 
-namespace ProcessManager;
+namespace ProcessManager\QueueManager ;
 
 use Pheanstalk\Pheanstalk;
 

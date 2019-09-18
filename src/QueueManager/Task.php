@@ -1,7 +1,6 @@
 <?php
 
-
-namespace ProcessManager;
+namespace ProcessManager\QueueManager ;
 
 /**
  * define and run tasks

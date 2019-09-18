@@ -1,9 +1,9 @@
 <?php
 
-use ProcessManager\Beanstalk;
-use ProcessManager\QueueManager;
+use ProcessManager\QueueManager\Beanstalk;
+use ProcessManager\QueueManager\QueueManager;
 
-require_once __DIR__ . '/../vendor/autoload.php' ;
+require_once __DIR__ . '/../../vendor/autoload.php' ;
 
 
 $beanstalk = new Beanstalk(['host' => 'localhost']);

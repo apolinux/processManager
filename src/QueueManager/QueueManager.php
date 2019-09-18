@@ -1,6 +1,6 @@
 <?php
 
-namespace ProcessManager;
+namespace ProcessManager\QueueManager ;
 
 /**
  * Manage task forking and communication between them
