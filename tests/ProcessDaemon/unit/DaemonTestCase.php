@@ -10,12 +10,18 @@ class DaemonTestCase extends TestCase{
     protected $proc_name ;
     protected $pid_file ;
     protected $options ;
+    protected $dir_var ;
     
     public function tearDown() {
         if(file_exists($this->pid_file)){
             $pid = (int)trim(file_get_contents($this->pid_file));
             if($pid > 0){
                 posix_kill($pid,SIGTERM) ;
+            }
+        }
+        if(! empty($this->dir_var)){
+            foreach(glob("$this->dir_var/*.*") as $file){
+                unlink($file);
             }
         }
     }
@@ -27,7 +33,7 @@ class DaemonTestCase extends TestCase{
     
     protected function runDaemon($action,$msg_expected='',$return_code=0) {
         set_time_limit(5); 
-        $daemont = __DIR__ . '/daemontest.php';
+        $daemont = __DIR__ . '/testdaemon.php';
         $this->assertFileExists($daemont,'The script daemontest must exists') ;
         
         $cmd = "php -d display_errors=1 $daemont $action";

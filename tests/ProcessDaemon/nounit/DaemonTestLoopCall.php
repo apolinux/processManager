@@ -1,16 +1,20 @@
+#!/bin/env php
 <?php
-use Apolinux\PlatformTools\Process\Daemon;
+use ProcessManager\ProcessDaemon\Daemon;
+use ProcessManager\ProcessDaemon\TaskManager;
 
-require __DIR__ .'/../bootstrap.php' ;
-require __DIR__ .'/../../vendor/autoload.php' ;
+require __DIR__ .'/../../bootstrap.php' ;
+require __DIR__ .'/../../../vendor/autoload.php' ;
         
+$name = substr(basename(__FILE__), 0, -4);
+
 $daemon = new Daemon([
-  'pid_file' => __DIR__ .'/testDaemonForkWait.pid' ,
-  'log_dir' => __DIR__  ,
-  'name' => 'testDaemonForkWait' ,
-  'task_mode' => Apolinux\PlatformTools\Process\TaskManager::MODE_LOOP_CALL_FORK,
+  'pid_file' => __DIR__ ."/$name.pid" ,
+  'log_dir' => __DIR__ ."/../../var"  ,
+  'name' => $name ,
+  'task_mode' => TaskManager::MODE_LOOP_CALL ,
   'task' => 'testTask' ,
-  'wait_loop_task_time' => 0 ,
+  'wait_loop_task_time' => 1 ,
   'timeout_after_kill' => 15 ,
   'timeout_after_start' => 1 ,
   'stop_on_exceptions' => false ,
@@ -19,7 +23,7 @@ $daemon = new Daemon([
 function testTask(){
     echo "start task\n" ;
     $f = tmpfile();
-    for($i=1 ; $i<=100000; $i++){
+    for($i=1 ; $i<=40000; $i++){
        fwrite($f, md5(base64_decode(random_bytes(256)))) ;
     }
     echo "file created\n" ;

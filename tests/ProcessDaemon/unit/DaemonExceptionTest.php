@@ -2,32 +2,34 @@
 
 require_once __DIR__ .'/DaemonTestCase.php' ;
 //use PHPUnit\Framework\TestCase;
-use Apolinux\PlatformTools\Process\TaskManager;
+use ProcessManager\ProcessDaemon\TaskManager;
 
 /**
  * Description of DaemonCallLoopTest
  *
  * @author drake
  */
-class DaemonFailTest extends DaemonTestCase{
+class DaemonCallLoopTest extends DaemonTestCase{
     
     public function setUp() {
+        $this->dir_var = __DIR__ ."/../../var" ;
+        $this->assertDirectoryExists($this->dir_var);
         $this->proc_name = substr(basename(__FILE__),0,-4);
-        $this->pid_file = __DIR__ ."/../../var/$this->proc_name.pid";
+        $this->pid_file = "$this->dir_var/$this->proc_name.pid";
         $this->options = [
           'pid_file' => $this->pid_file ,
-          'log_dir' => __DIR__ ."/../../var"  ,
+          'log_dir' => $this->dir_var ,
           'name' => $this->proc_name ,
           'task_mode' => TaskManager::MODE_LOOP_CALL ,
-          'task' => 'testTaskFail' ,
+          'task' => 'testTaskException' ,
           'wait_loop_task_time' => 1 ,
           'timeout_after_kill' => 15 ,
           'timeout_after_start' => 1 ,
-          'stop_on_exceptions' => false ,
+          'stop_on_exceptions' => true ,
         ] ;
     }
     
-    public function testDaemonFail(){
+    public function testDaemonException(){
         $this->setOptions($this->options);
         
         $this->runDaemon('start','Daemon started');
@@ -38,7 +40,7 @@ class DaemonFailTest extends DaemonTestCase{
         
         $this->assertFileExists('/proc/'. $pid,
                 'Process with id '. $pid.' does not exists') ;
-        sleep(5);
+        sleep(6);
         $this->assertFileNotExists('/proc/'. $pid,
                 'Process with id '. $pid.' still running') ;
     }

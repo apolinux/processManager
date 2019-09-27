@@ -1,5 +1,5 @@
 <?php
 
-namespace Apolinux\PlatformTools\Process;
+namespace ProcessManager\ProcessDaemon;
 
 class DaemonException extends \Exception{}

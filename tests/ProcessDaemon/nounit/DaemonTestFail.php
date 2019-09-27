@@ -1,23 +1,16 @@
-#!/bin/env php
 <?php
-use Apolinux\PlatformTools\Process\Daemon;
-use Apolinux\PlatformTools\Process\TaskManager;
+use ProcessManager\ProcessDaemon\Daemon;
+use ProcessManager\ProcessDaemon\TaskManager;
 
 require __DIR__ .'/../../bootstrap.php' ;
 require __DIR__ .'/../../../vendor/autoload.php' ;
         
-$name = substr(basename(__FILE__), 0, -4);
-
 $daemon = new Daemon([
-  'pid_file' => __DIR__ ."/$name.pid" ,
-  'log_dir' => __DIR__ ."/../../var"  ,
-  'name' => $name ,
+  'pid_file' => __DIR__ .'/testDaemonFail.pid' ,
+  'log_dir' => __DIR__  ,
+  'name' => 'testDaemonFail' ,
   'task_mode' => TaskManager::MODE_LOOP_CALL ,
-  'task' => 'testTask' ,
-  'wait_loop_task_time' => 1 ,
-  'timeout_after_kill' => 15 ,
-  'timeout_after_start' => 1 ,
-  'stop_on_exceptions' => false ,
+  'task' => 'testTask'
 ]);
         
 function testTask(){
@@ -34,6 +27,7 @@ function testTask(){
     }
     fclose($f);
     echo "file closed\n" ;
+    fwrite('nothing');
 }
 
 $daemon->run();

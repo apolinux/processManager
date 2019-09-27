@@ -1,6 +1,6 @@
 <?php
 
-namespace Apolinux\PlatformTools\Process;
+namespace ProcessManager\ProcessDaemon;
 
 /**
  * Description of Logger

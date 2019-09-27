@@ -1,8 +1,6 @@
 <?php
 
-namespace Apolinux\PlatformTools\Process ;
-
-use \Apolinux\PlatformTools\System\Helper;
+namespace ProcessManager\ProcessDaemon;
 
 /**
  * manage creation and control of daemon processes using fork

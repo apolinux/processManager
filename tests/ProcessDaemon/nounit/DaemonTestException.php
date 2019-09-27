@@ -1,5 +1,6 @@
 <?php
-use Apolinux\PlatformTools\Process\Daemon;
+use ProcessManager\ProcessDaemon\Daemon;
+use ProcessManager\ProcessDaemon\TaskManager;
 
 require __DIR__ .'/../../bootstrap.php' ;
 require __DIR__ .'/../../../vendor/autoload.php' ;
@@ -8,7 +9,7 @@ $daemon = new Daemon([
   'pid_file' => __DIR__ .'/testDaemonException.pid' ,
   'log_dir' => __DIR__  ,
   'name' => 'testDaemonException' ,
-  'task_mode' => Apolinux\PlatformTools\Process\TaskManager::MODE_LOOP_CALL ,
+  'task_mode' => TaskManager::MODE_LOOP_CALL ,
   'task' => 'testTask',
   'stop_on_exceptions' => true ,
 ]);

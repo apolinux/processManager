@@ -1,7 +1,7 @@
 #!/bin/env php -d display_errors=1
 <?php
-use Apolinux\PlatformTools\Process\Daemon;
-use Apolinux\PlatformTools\Process\TaskManager;
+use ProcessManager\ProcessDaemon\Daemon;
+//use ProcessManager\ProcessDaemon\TaskManager;
 
 require __DIR__ .'/../../bootstrap.php' ;
 require __DIR__ .'/../../../vendor/autoload.php' ;

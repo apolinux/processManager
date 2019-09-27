@@ -1,8 +1,6 @@
 <?php
 
-namespace Apolinux\PlatformTools\Process;
-
-use \Apolinux\PlatformTools\System\Helper;
+namespace ProcessManager\ProcessDaemon;
 
 /**
  * Description of Task
@@ -126,7 +124,7 @@ class TaskManager extends Daemon{
                     throw $e ;
                 }
             }
-            Helper::sleep($this->getConfig('wait_loop_task_time'));
+            self::sleep($this->getConfig('wait_loop_task_time'));
         }
 
         // delete pid
@@ -145,6 +143,14 @@ class TaskManager extends Daemon{
     public function setConfig($param, $value){
         if(property_exists($this, $param)){
             $this->$param = $value ;
+        }
+    }
+    
+    public static function sleep($time){
+        if($time < 1){
+            usleep($time * 1000000);
+        }else{
+            sleep($time);
         }
     }
 }

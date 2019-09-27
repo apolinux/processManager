@@ -1,29 +1,35 @@
 <?php
 
 require_once __DIR__ .'/DaemonTestCase.php' ;
-//use PHPUnit\Framework\TestCase;
-use Apolinux\PlatformTools\Process\TaskManager;
-
+use ProcessManager\ProcessDaemon\TaskManager;
+use ProcessManager\ProcessDaemon\Logger;
 /**
  * Description of DaemonCallLoopTest
  *
  * @author drake
  */
-class DaemonLoopCallTest extends DaemonTestCase{
+class DaemonCmdForkLoopTest extends DaemonTestCase{
     
     public function setUp() {
+        $this->dir_var = __DIR__ ."/../../var" ;
+        $this->assertDirectoryExists($this->dir_var);
         $this->proc_name = substr(basename(__FILE__),0,-4);
-        $this->pid_file = __DIR__ ."/../../var/$this->proc_name.pid";
+        $this->pid_file = "$this->dir_var/$this->proc_name.pid";
         $this->options = [
           'pid_file' => $this->pid_file ,
-          'log_dir' => __DIR__ ."/../../var"  ,
+          'log_dir' => $this->dir_var ,
           'name' => $this->proc_name ,
-          'task_mode' => TaskManager::MODE_LOOP_CALL ,
-          'task' => 'testTask' ,
+          'task_mode' => TaskManager::MODE_LOOP_CMD_FORK,
+          //'task' => 'testTask' ,
+          'run_path' => __DIR__ .'/test_task.php' ,
           'wait_loop_task_time' => 1 ,
           'timeout_after_kill' => 15 ,
           'timeout_after_start' => 1 ,
           'stop_on_exceptions' => false ,
+          'run_path_args' => ['param_one=niebla'],
+          'run_path_env' => ['BLA' => 'FIN'],
+          'php_bin' => '/usr/bin/php' ,
+          'log_mode' => Logger::MODE_DEBUG ,
         ] ;
     }
     
