@@ -9,15 +9,8 @@ $daemon = new Daemon([
   'pid_file' => __DIR__ ."/../../'. $procname.pid" ,
   'log_dir' => __DIR__  . '/../../var' ,
   'name' => $procname ,
-  /*'task_mode' => Apolinux\PlatformTools\Process\TaskManager::MODE_ONCE_CALL ,
-  'task' => 'testTask'*/
 ]);
         
-/*$task = new Task([
-  'method' => 'testTask' ,
-  'parameters' => [],
-]);*/
-
 $daemon->addTaskMethod('testTask',[1, 4]);
 $daemon->addTaskCommand('/usr/bin/php', [ __DIR__ . '/test_task.php', 'bla=1'], ['base' => 'fut']);
 

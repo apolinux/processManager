@@ -1,7 +1,7 @@
 <?php
 
-namespace Apolinux\PlatformTools\Daemon;
-use Apolinux\PlatformTools\Process\Logger;
+namespace ProcessManager\Daemon;
+use ProcessManager\ProcessDaemon\Logger;
 
 /**
  * manage creation and control of daemon processes using fork
@@ -9,6 +9,12 @@ use Apolinux\PlatformTools\Process\Logger;
  * @author Carlos Arce
  */
 class Daemon {
+    
+    const IS_PARENT = 1 ;
+    const IS_CHILD = 2 ;
+
+    const SIGNAL_ACTION_USE_FLAG = 1 ;
+    const SIGNAL_ACTION_TERMINATE = 2 ;    
     
     /**
      * file where process id pid is saved
@@ -83,6 +89,10 @@ class Daemon {
     private $main_loop_task ;
     
     private $tasks = [] ;
+    
+    private static $process_status = self::IS_PARENT ;
+    
+    private $signal_action = self::SIGNAL_ACTION_TERMINATE ;
     
     /**
      * instance of this class
@@ -183,9 +193,9 @@ class Daemon {
                 if(! file_exists($task->command)) {
                     $this->die("The file '$task->command' does not exists") ;
                 }
-                if( ! is_executable($task->command)){
+                /*if( ! is_executable($task->command)){
                     $this->die("The file '$task->command' is not executable");
-                }
+                }*/
             }
         /*if( in_array($this->getConfig('task_mode') ,[ 
                                         TaskManager::MODE_ONCE_CMD ,
@@ -393,25 +403,28 @@ END;
     public static function sigHandler($signo){
         Logger::log('sighandler, pid:'. posix_getpid().
                 ', signal received:'. $signo .
-                ', task mode:' . self::$instance->task_mode, 
+                ', ground status:' . self::$instance->ground_status, 
                 Logger::MODE_DEBUG
                 );
         //error_log(__METHOD__.', in pid:'. posix_getpid().', signo:'. $signo);
         switch ($signo) {
             case SIGTERM:
                // actions SIGTERM signal processing
-               switch(self::$instance->task_mode){
-                   case TaskManager::MODE_LOOP_CALL:
-                   case TaskManager::MODE_LOOP_CALL_FORK:
-                   case TaskManager::MODE_LOOP_CMD_FORK :    
-                       self::$must_run = false ;
-                   break ;    
-                   case TaskManager::MODE_ONCE_CALL:
-                   case TaskManager::MODE_ONCE_CMD:
+                /*switch(self::$instance->signal_action){
+                    case self::SIGNAL_ACTION_USE_FLAG:
+                        self::$must_run = false ;
+                    break ;    
+                   
+                    case self::SIGNAL_ACTION_TERMINATE:
+                    default:
                        self::$instance->removePidFile() ;
                        self::$instance->log('Daemon terminated by signal') ;
                        exit(0);
-               }
+                    break ;       
+                }*/
+                if( in_array( self::$instance->ground_status, [Logger::IS_CHILD],true)){
+                    self::$must_run = false ;
+                }
             break;
             case SIGHUP:
                 // reread the configuration file and initialize the data again
@@ -638,10 +651,16 @@ END;
                 $children[] = $pid ;
             }
         }
-        
-        ($this->main_task)();
+        if(is_callable($this->main_task)){
+            ($this->main_task)();
+        }
         
         while(count($children) > 0) {
+            if(! self::$must_run){
+                $this->killChildren($children);
+                self::$must_run = true ;
+                continue ;
+            }
             foreach($children as $key => $pid) {
                 $res = pcntl_waitpid($pid, $status, WNOHANG);
 
@@ -651,7 +670,9 @@ END;
                     echo "child with pid $pid exited with status:". pcntl_wexitstatus($status) ."\n" ;
                 }
             }
-            ($this->main_loop_task)();
+            if(is_callable($this->main_loop_task)){
+                ($this->main_loop_task)();
+            }
             
             sleep(1);
         }
@@ -675,12 +696,20 @@ END;
         }*/
     }
     
+    private function killChildren($children_list){
+        foreach($children_list as $pid){
+            posix_kill($pid, SIGTERM);
+        }
+    }
+    
     private function runTask($task){
+        //$this->$process_status = self::IS_CHILD ;
+        $this->ground_status = Logger::IS_GRANSON;
         if( ($task->type == 'method') || ($task->type == 'callable') ){
             call_user_func_array($task->task, $task->params) ;
         }elseif($task->type =='command'){
             pcntl_exec($task->command, $task->params, $task->env) ;
-            die("The command $task->command not run");
+            die("The command $task->command not run\n");
         }
     }
 }

@@ -1,6 +1,7 @@
 <?php
+//use PHPUnit\Framework\TestCase;
+require_once __DIR__ .'/DaemonTestCase.php' ;
 
-use PHPUnit\Framework\TestCase;
 /**
  * Daemon class test
  * 
@@ -8,7 +9,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @author drake
  */
-class DaemonTest extends TestCase {
+class DaemonTest extends DaemonTestCase {
     
     public function setUp() {
         $this->proc_name = substr(basename(__FILE__),0,-4);
@@ -17,16 +18,11 @@ class DaemonTest extends TestCase {
           'pid_file' => $this->pid_file ,
           'log_dir' => __DIR__ ."/../../var"  ,
           'name' => $this->proc_name ,
-          //'task_mode' => TaskManager::MODE_ONCE_CMD,
-          //'task' => 'testTask' ,
           'run_path' => __DIR__ .'/test_task.php' ,
           //'wait_loop_task_time' => 1 ,
           'timeout_after_kill' => 15 ,
           'timeout_after_start' => 1 ,
           'stop_on_exceptions' => false ,
-          /*'run_path_args' => ['param_one=niebla'],
-          'run_path_env' => ['BLA' => 'FIN'],
-          'php_bin' => '/usr/bin/php' , */
         ] ;
     }
     
